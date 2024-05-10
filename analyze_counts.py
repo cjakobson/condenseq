@@ -87,7 +87,7 @@ for i in range(len(means)):
     for j in range(4):
         for k in range(j+1,4):
             plt.subplot(3,6,subplot_counter)
-            plt.scatter(means[i][:,j], means[i][:,k], s=0.5)
+            plt.scatter(means[i][:,j], means[i][:,k], s=0.25,c='gray')
             plt.xlabel(day_labels[j])
             plt.ylabel(day_labels[k])
             plt.title(arm_labels[i])
@@ -220,6 +220,58 @@ for i in range(len(scores)):
         plt.subplots_adjust(wspace=0.75, hspace=0.75)
         subplot_counter=subplot_counter+1
 
+
+
+#categorize based on scores
+templating_nontoxic_index=np.where((scores[1]>0)*(scores[1]<=scores[0]))[0]
+templating_toxic_index=np.where((scores[1]>0)*(scores[1]>scores[0]))[0]
+aggregating_index=np.where((scores[1]<=0)*(scores[0]>0.5))[0]
+#all_other_index=np.where((scores[1]<=0)*(scores[0]<=0.5))[0]
+
+
+i=0
+j=1
+#highlight categories on scatter plots
+plt.subplot(2,3,subplot_counter)
+plt.scatter(scores[j], scores[i], s=0.25,c='gray')
+plt.scatter(scores[j][templating_nontoxic_index], scores[i][templating_nontoxic_index],s=0.5,c='green')
+plt.xlabel(arm_labels[j])
+plt.ylabel(arm_labels[i])
+plt.title('scores')
+plt.xlim(-10,10)
+plt.ylim(-10,10)
+plt.gca().set_aspect('equal', adjustable='box')
+#add spacing between subplots
+plt.subplots_adjust(wspace=0.75, hspace=0.75)
+subplot_counter=subplot_counter+1
+
+plt.subplot(2,3,subplot_counter)
+plt.scatter(scores[j], scores[i], s=0.25,c='gray')
+plt.scatter(scores[j][templating_toxic_index], scores[i][templating_toxic_index],s=0.5,c='red')
+plt.xlabel(arm_labels[j])
+plt.ylabel(arm_labels[i])
+plt.title('scores')
+plt.xlim(-10,10)
+plt.ylim(-10,10)
+plt.gca().set_aspect('equal', adjustable='box')
+#add spacing between subplots
+plt.subplots_adjust(wspace=0.75, hspace=0.75)
+subplot_counter=subplot_counter+1
+
+plt.subplot(2,3,subplot_counter)
+plt.scatter(scores[j], scores[i], s=0.25,c='gray')
+plt.scatter(scores[j][aggregating_index], scores[i][aggregating_index],s=0.5,c='blue')
+plt.xlabel(arm_labels[j])
+plt.ylabel(arm_labels[i])
+plt.title('scores')
+plt.xlim(-10,10)
+plt.ylim(-10,10)
+plt.gca().set_aspect('equal', adjustable='box')
+#add spacing between subplots
+plt.subplots_adjust(wspace=0.75, hspace=0.75)
+subplot_counter=subplot_counter+1
+
+
 mng = plt.get_current_fig_manager()
 mng.full_screen_toggle()
 #save figure as svg
@@ -230,11 +282,7 @@ figure_counter=figure_counter+1
 #plt.close()
 
 
-#categorize based on scores
-templating_nontoxic_index=np.where((scores[1]>0)*(scores[1]<=scores[0]))[0]
-templating_toxic_index=np.where((scores[1]>0)*(scores[1]>scores[0]))[0]
-aggregating_index=np.where((scores[1]<=0)*(scores[0]>0.5))[0]
-#all_other_index=np.where((scores[1]<=0)*(scores[0]<=0.5))[0]
+
 
 
 #print(templating_nontoxic_index)
