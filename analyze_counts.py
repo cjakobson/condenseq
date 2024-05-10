@@ -10,7 +10,9 @@ print(os.getcwd())
 figure_counter=1
 
 #point to where TL output files are kept
-FILEBASE='/Users/christopherjakobson/Dropbox/CONDENSeq Background Data/'
+#FILEBASE='/Users/christopherjakobson/Dropbox/CONDENSeq Background Data/'
+FILEBASE='/Users/cjakobson/Dropbox/CONDENSeq Background Data/'
+
 #make figure output directory if not already present
 if not os.path.exists(FILEBASE + 'analyze_counts_figures'):
     os.makedirs(FILEBASE + 'analyze_counts_figures')
@@ -43,24 +45,23 @@ counts = [np.where(counts[i] < count_thresh, 0, counts[i]) for i in range(len(co
 #print(counts[0])
 
 #normalize columns to a total of 1e6 reads
+counts_norm = [np.zeros((len(counts[0]),4)) for i in range(len(counts))]
 total_reads = [np.sum(counts[i], axis=0) for i in range(len(counts))]
 #print(total_reads[0])
-counts = [counts[i]/total_reads[i][None,:]*1e6 for i in range(len(counts))]
+counts_norm = [counts[i]/total_reads[i][None,:]*1e6 for i in range(len(counts_norm))]
 
-#print(counts[0])
 
 #take the mean of the three replicates
-means = [np.zeros((int(len(counts[i])/3),4)) for i in range(len(counts))]
+means = [np.zeros((int(len(counts_norm[i])/3),4)) for i in range(len(counts_norm))]
 #print(means[0].shape)
 
-for i in range(len(counts)):
+for i in range(len(counts_norm)):
     for j in range(len(day_labels)):
-        temp_mat=np.zeros((int(len(counts[i])/3),2)) #initialize a temporary matrix to store the means
-        for k in range(0,2):
-            temp_mat[:,k]=counts[i][k+0:-1:3,j]
+        temp_mat=np.zeros((int(len(counts_norm[i])/3),3)) #initialize a temporary matrix to store the means
+        for k in range(0,3):
+            temp_mat[:,k]=counts_norm[i][k::3,j]
         means[i][:,j]=np.mean(temp_mat, axis=1)
 
-#print(means[0])
 
 
 #fill in pseudocounts in mean
@@ -74,7 +75,7 @@ for i in range(len(means)):
     means[i][means[i]<=read_thresh]=pseudo_count
     #nan missing rows
     means[i][~v_ever_observed,:]=np.nan
-    #remove stray zeros
+    #remove any stray zeros
     means[i][means[i]==0]=np.nan
 
 #print(means[0])
@@ -147,9 +148,9 @@ figure_counter=figure_counter+1
 
 #sort scores and plot rows as a heatmap in ascending order
 for i in range(len(scores)):
-    sorted_indices = np.argsort(scores[i])[::-1]
+    sorted_indices = np.argsort(scores[i])#[::-1]
     plt.figure()
-    plt.imshow(means_norm[i][sorted_indices,:], aspect='auto',vmin=0, vmax=10, cmap='seismic')
+    plt.imshow(means_norm[i][sorted_indices,:], aspect='auto',vmin=0, vmax=10, cmap='cividis')
     plt.colorbar()
     plt.title(arm_labels[i])
     plt.xlabel('day')
@@ -168,8 +169,10 @@ for i in range(len(scores)):
     #plot some example time courses of means_norm on the same axes
     plt.figure()
     for j in range(0,len(sorted_indices),1000):
-        plt.plot(means_norm[i][sorted_indices[j],:])
+        plt.plot(means_norm[i][sorted_indices[j],:],'k',linewidth=j/1000)
     plt.title(arm_labels[i])
+    plt.yscale('log')
+    plt.ylim(1e-3,1e3)
     mng = plt.get_current_fig_manager()
     mng.full_screen_toggle()
     #save figure as svg
@@ -256,7 +259,18 @@ biophys_info=biophys_dict[biophys_dict["Vidalno"].isin(vidal_ids)]
 
 print(biophys_info.head())
 
+#output scores to csv to compare to prior analysis
+output_scores=pd.DataFrame(vidal_ids, columns=['VidalID'])
 
+output_scores['Gene']=gene_info['GeneSymbol'].values
+output_scores['Gal=>Raf']=scores[0]
+output_scores['Raf=>Raf']=scores[1]
+output_scores['Raf=>no selection']=scores[2]
+output_scores['category']=v_categories
+
+print(output_scores.head())
+
+output_scores.to_csv(FILEBASE + 'analyze_counts_figures/scores.csv', index=False)
 
 
 
