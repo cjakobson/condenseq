@@ -200,7 +200,7 @@ vidal_dict = pd.read_excel(FILEBASE + 'CONDENSeqBinAnalysis.xlsx', sheet_name='A
 #get rows of vidal_dict for which Clone matches vidal_ids
 gene_info=vidal_dict[vidal_dict.index.isin(vidal_ids)]
 
-print(gene_info.head())
+#print(gene_info.head())
 
 
 #scatter the scores against one another
@@ -250,25 +250,57 @@ for i in templating_toxic_index:
 for i in aggregating_index:
     v_categories[i]='aggregating'
 
-print(v_categories[0:9])
+#print(v_categories[0:9])
 
 
 biophys_dict=pd.read_csv(FILEBASE + 'BiophysicalFeatures_2022_05_23.txt', sep='\t')
 
 biophys_info=biophys_dict[biophys_dict["Vidalno"].isin(vidal_ids)]
 
-print(biophys_info.head())
+#print(biophys_info.head())
+#print(gene_info.head())
+
+
+
 
 #output scores to csv to compare to prior analysis
 output_scores=pd.DataFrame(vidal_ids, columns=['VidalID'])
 
-output_scores['Gene']=gene_info['GeneSymbol'].values
-output_scores['Gal=>Raf']=scores[0]
-output_scores['Raf=>Raf']=scores[1]
-output_scores['Raf=>no selection']=scores[2]
+
+
+output_scores['gene']=gene_info['GeneSymbol'].values
+output_scores['dna_sequence']=gene_info['DNA'].values
+output_scores['protein_sequence']=gene_info['Protein'].values
+output_scores['score_Gal=>Raf']=scores[0]
+output_scores['score_Raf=>Raf']=scores[1]
+output_scores['score_Raf=>no selection']=scores[2]
 output_scores['category']=v_categories
 
-print(output_scores.head())
+#also add time course data
+for i in range(len(arm_labels)):
+    for j in range(len(day_labels)):
+        output_scores[day_labels[j] + '_' + arm_labels[i]]=means_norm[i][:,j]
+
+#print(output_scores.head())
+
+columns_to_use=range(1,65)
+#also append biophysical properties
+#build matrix of biophysical properties to append to output_scores
+biophys_mat=np.zeros((len(output_scores), len(columns_to_use)))
+for i in range(len(output_scores)):
+    if sum(output_scores['VidalID'][i] == biophys_info['Vidalno']) > 0:
+        #print(output_scores['VidalID'][i])
+        temp_row=biophys_info[biophys_info['Vidalno']==output_scores['VidalID'][i]].index[0]
+        #print(temp_row)
+        for j in range(len(columns_to_use)):
+            biophys_mat[i,j]=biophys_info.iat[temp_row,columns_to_use[j]]
+
+#print(biophys_mat[0:9])
+
+for i in range(len(columns_to_use)):
+    output_scores[biophys_info.columns[columns_to_use[i]]]=biophys_mat[:,i]
+
+
 
 output_scores.to_csv(FILEBASE + 'analyze_counts_figures/scores.csv', index=False)
 
